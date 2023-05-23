@@ -90,8 +90,8 @@ def main():
     House_owner = st.number_input('Client propriétaire (Non : 0, Oui : 1)',
                                   min_value=0, max_value=1)
 
-    REGION_POPULATION_RELATIVE = st.number_input('Population relative région',
-                                                 min_value=0.000000, max_value=1.000000, step=1e-6)
+    REGION_POPULATION_RELATIVE = st.number_input('Population relative région (*1e6)',
+                                                 min_value=0., max_value=1e6, step=1.)
 
     Ratio_retard = st.number_input('Pourcentage de prêt avec retard',
                                    min_value=0, value=100, step=1)
@@ -108,7 +108,7 @@ def main():
     marie = st.number_input('Client marié(e) (Non : 0, Oui : 1)', 
                             min_value=0, max_value=1)
     
-    dat = [[car_owner, House_owner, REGION_POPULATION_RELATIVE, Ratio_retard,
+    dat = [[car_owner, House_owner, REGION_POPULATION_RELATIVE/1e6, Ratio_retard,
             Total_prêt_annulé_vendu, Prêt_renouvelable, business, marie]]
 
     predict_btn = st.button('Prédire')
@@ -116,7 +116,7 @@ def main():
         pred = None
         pred = request_prediction(MLFLOW_URI, dat)["predictions"][0][1]
         
-        st.write(f"Le pourcentage de faillite est de {pred} %")
+        st.write(f"Le pourcentage de faillite est de {round(100*pred,5)} %")
 
 
 if __name__ == '__main__':
