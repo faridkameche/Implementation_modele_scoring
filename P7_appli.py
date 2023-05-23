@@ -58,7 +58,7 @@ def fus_ancien_credit():
 # In[3]:
 
 
-def f_application_train(f_application = "Raw_Datasets/application_train.csv"):
+def f_application_train(f_application = "Datasets/application_train_P7.csv"):
     
     dtype_application_train = {"SK_ID_CURR": np.int32, 
                                "TARGET": np.int32,
