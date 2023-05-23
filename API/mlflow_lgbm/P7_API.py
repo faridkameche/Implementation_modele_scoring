@@ -49,7 +49,7 @@ def request_prediction(model_uri, data):
 
 
 def main():
-    MLFLOW_URI = 'https://faridkameche-p7-scoring-credit-apimlflow-lgbmp7-api-uijzk2.streamlit.app/invocations'
+    MLFLOW_URI = 'http://127.0.0.1:5000/invocations'
 
     st.title("Prédiction de la probabilité de faillite de remboursement d'un crédit")
 
