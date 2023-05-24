@@ -84,7 +84,7 @@ def show_ui():
 
 if __name__ == "__main__":
     # Exécutez FastAPI en arrière-plan avec uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+    uvicorn.run(app, host="localhost", port=8000, log_level="info")
 
     # Exécutez Streamlit pour l'interface utilisateur
     show_ui()
