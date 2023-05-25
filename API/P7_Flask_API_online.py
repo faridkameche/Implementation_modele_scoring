@@ -19,7 +19,7 @@ from flask import Flask, request, render_template
 app = Flask(__name__)
 app.config["DEBUG"] = True
 
-pipeline_lgbm = joblib.load("/home/Faridkam/.virtualenvs/my-virtualenv/pipeline_lgbm.joblib")
+pipeline_lgbm = joblib.load("/home/Faridkam/P7_scoring_credit/API/pipeline_lgbm.joblib")
 
 @app.route("/")
 def home():
