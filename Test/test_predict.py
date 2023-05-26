@@ -5,8 +5,9 @@
 
 
 import numpy as np
-import pytest
+import joblib
 import pandas as pd
+import pytest
 
 pipeline_lgbm = joblib.load("Outputs/pipeline_lgbm.joblib")
 
@@ -23,7 +24,7 @@ def test_predict():
         val_8 = np.log10(np.random.randint(0, 2)+1)
         liste_feat.append([val_1, val_2, val_3, val_4, val_5, val_6, val_7, val_8])
         
-    
+
     data_to_test = pd.DataFrame(liste_feat)
     y_0 = []
     y_1 = []
