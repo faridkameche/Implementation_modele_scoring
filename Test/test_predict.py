@@ -5,10 +5,8 @@
 
 
 import numpy as np
-import joblib
-from flask import Flask, request, render_template
-
 import pytest
+import pandas as pd
 
 pipeline_lgbm = joblib.load("Outputs/pipeline_lgbm.joblib")
 
@@ -25,7 +23,7 @@ def test_predict():
         val_8 = np.log10(np.random.randint(0, 2)+1)
         liste_feat.append([val_1, val_2, val_3, val_4, val_5, val_6, val_7, val_8])
         
-    import pandas as pd
+    
     data_to_test = pd.DataFrame(liste_feat)
     y_0 = []
     y_1 = []
@@ -44,13 +42,6 @@ def predict_str():
 def test_predict_str():
     with pytest.raises(ValueError):
         predict_str()
-        
-        
-# def test_predict_str():
-#     x_str = ["test", "string", "ne", "fonctionne", "pas", "avec", "le", "modèle"]
-    
-#     assert type(x_str[0])!=str, "Value error"
-#     pipeline_lgbm.predict_proba(x_str)
 
 
 # In[ ]:
