@@ -9,7 +9,7 @@ import joblib
 import pandas as pd
 import pytest
 
-pipeline_lgbm = joblib.load("P7_scoring_credit/Outputs/pipeline_lgbm.joblib")
+pipeline_lgbm = joblib.load("Outputs/pipeline_lgbm.joblib")
 
 def test_predict():
     liste_feat = []
