@@ -385,7 +385,7 @@ def plot_shap(données, identifiant, col_fit):
     
     shap_df = pd.DataFrame(list(zip(colonne, shap_val, col_val, colonne_graph, colonne_label, col_max)), 
                                columns = ["Variables", "Shap", "Valeur", 
-                                          "Variable_g", "Label", "Max_g"]).sort_values("Shap")
+                                          "Variable_g", "Label", "Max_g"]).sort_values("Shap").reset_index(drop=True)
     
     return shap_df
 
