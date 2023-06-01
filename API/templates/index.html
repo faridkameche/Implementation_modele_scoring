@@ -17,31 +17,45 @@
     }
     </style>
  </head>
+<h1><center><u>Probabilité de faillite de remboursement de crédit</u></center></h1>
 
-<form action="{{ url_for('predict')}}" method="post">
+<form action="{{ url_for('predict')}}" method="post"><center>
     <div class="row">
         <div class="column">
             <p>Propriétaire voiture</p>
-            <input type="number" name="Propriétaire_voiture" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" /><br>
+            <input type="number" name="Propriétaire_voiture" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" value="{{ request.form['Propriétaire_voiture'] }}"/><br>
             <p>Propriétaire maison</p>
-            <input type="number" name="Propriétaire_maison" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" /><br>
+            <input type="number" name="Propriétaire_maison" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" value="{{ request.form['Propriétaire_maison'] }}"/><br>
             <p>Population relative région (x10<sup>6</sup>)</p>
-            <input type="number" name="REGION_POPULATION_RELATIVE" min=0 max=100000 required="required" /><br>
+            <input type="number" name="REGION_POPULATION_RELATIVE" min=0 max=100000 required="required" value="{{ request.form['REGION_POPULATION_RELATIVE'] }}"/><br>
             <p>Pourcentage prêt retard</p>
-            <input type="number" name="Pourcentage_prêt_retard" min=0 max=100 required="required" /><br>
+            <input type="number" name="Pourcentage_prêt_retard" min=0 max=100 required="required" value="{{ request.form['Pourcentage_prêt_retard'] }}"/><br>
         </div>
         <div class="column">
             <p>Nombre prêt annulé vendu</p>
-            <input type="number" name="Nombre_prêt_annulé_vendu" required="required" /><br>
+            <input type="number" name="Nombre_prêt_annulé_vendu" required="required" value="{{ request.form['Nombre_prêt_annulé_vendu'] }}"/><br>
             <p>Nombre ancien prêt renouvelable</p>
-            <input type="number" name="Nombre_ancien_prêt_renouvelable" required="required" /><br>
+            <input type="number" name="Nombre_ancien_prêt_renouvelable" required="required" value="{{ request.form['Nombre_ancien_prêt_renouvelable'] }}"/><br>
             <p>Businessman(woman)</p>
-            <input type="number" name="Emploi_business" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" /><br>
+            <input type="number" name="Emploi_business" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" value="{{ request.form['Emploi_business'] }}"/><br>
             <p>Marié</p>
-            <input type="number" name="Marié" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" /><br>
+            <input type="number" name="Marié" placeholder="0 : non, 1 : oui" min=0 max=1 required="required" value="{{ request.form['Marié'] }}"/><br>
         </div>
   </div>
-  <button type="submit">Predict</button>
-</form>
-<p> La probabilité de faillite est de : {{ prediction }} %</p>
+  <button type="submit">Prédiction</button>
+</center></form>
+
+<p><center> La probabilité de faillite est de : <b><u><font color="#C81818">{{ prediction }} %</font><u></b></center></p>
+<div class="column"><center>
+    <p> Propriétaire voiture = {{ request.form['Propriétaire_voiture'] }}</p>
+    <p> Propriétaire maison = {{ request.form['Propriétaire_maison'] }}</p>
+    <p> Population relative région (x10<sup>6</sup>) = {{ request.form['REGION_POPULATION_RELATIVE'] }}</p>
+    <p> Pourcentage prêt retard = {{ request.form['Pourcentage_prêt_retard'] }}</p>
+</center></div>
+<div class="column"><center>
+    <p> Nombre prêt annulé vendu = {{ request.form['Nombre_prêt_annulé_vendu'] }}</p>
+    <p> Nombre ancien prêt renouvelable = {{ request.form['Nombre_ancien_prêt_renouvelable'] }}</p>
+    <p> Businessman(woman) = {{ request.form['Emploi_business'] }}</p>
+    <p> Marié = {{ request.form['Marié'] }}</p>
+</center></div>
 
