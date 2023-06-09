@@ -21,6 +21,7 @@ import shap
 from lightgbm import LGBMClassifier
 from sklearn.model_selection import GridSearchCV, validation_curve, cross_val_score, learning_curve
 from sklearn.preprocessing import FunctionTransformer
+import requests
 
 
 # ## Fusion des données des anciens crédits
@@ -232,22 +233,50 @@ def f_entraînement():
     return df_final.reset_index(drop=True), score, seuil
 
 
-# In[13]:
+# In[25]:
 
 
+def find_between(s, first, last):
+    try:
+        start = s.index(first) + len(first)
+        end = s.index(last, start)
+        return s[start:end]
+    except ValueError:
+        return ""
+    
+    
 def proba_faillite(identifiant, données, score, seuil):
     
     val_client = données.loc[données["SK_ID_CURR"]==identifiant,"SK_ID_CURR"].values.size
-    col_fit = données.iloc[:,2:].columns.tolist()
     
+    col_fit = données.iloc[:,2:].columns.tolist()
+    col_val = données.iloc[:,2:10].columns.tolist()
     if (val_client==1):
         client_1 = données.loc[données["SK_ID_CURR"]==identifiant,"SK_ID_CURR"].item()
-        client_proba = données.loc[données["SK_ID_CURR"]==identifiant, "Proba_faillite"].item()
+        val_cl = données.loc[données["SK_ID_CURR"]==identifiant,col_val].values.tolist()
+        val_cl[0][2] = val_cl[0][2]*1e6
+        val_req = []
+        for elt in val_cl[0]:
+            val_req.append(str(elt))
+        
+        dat_api = {"Propriétaire_voiture": val_req[0],
+                   "Propriétaire_maison": val_req[1],
+                   "REGION_POPULATION_RELATIVE": val_req[2],
+                   "Pourcentage_prêt_retard": val_req[3],
+                   "Nombre_prêt_annulé_vendu": val_req[4],
+                   "Nombre_ancien_prêt_renouvelable": val_req[5],
+                   "Emploi_business": val_req[6],
+                   "Marié": val_req[7]}    
+        
+        r = requests.post("https://faridkam.pythonanywhere.com/predict", data=dat_api)
+        rep_text = (r.content.decode())
+        client_proba = float(find_between(rep_text, '"#C81818">', " %" ))
+#         client_proba = données.loc[données["SK_ID_CURR"]==identifiant, "Proba_faillite"].item()
     
     return client_proba
 
 
-# In[16]:
+# In[8]:
 
 
 def valeur_variable_categ(col, data):
@@ -271,7 +300,7 @@ def valeur_variable_num(col, data):
     return val_num
 
 
-# In[17]:
+# In[9]:
 
 
 def graph_variable(identifiant, shap_df, df, num_var, seuil):
@@ -285,32 +314,43 @@ def graph_variable(identifiant, shap_df, df, num_var, seuil):
 
     plt.bar(np.arange(0, rang_s+1,1), shap_df.iloc[num_var, 2][0:rang_s+1], color="green", align="center")
     plt.bar(np.arange(rang_s+1,len_x,1), shap_df.iloc[num_var, 2][rang_s+1:], color="red", align="center")
-        
-    if (ind>3):
+    
+    liste_point = ["Propriétaire d'un logement", "Propriétaire d'une voiture", "Emploi business", "Marié(e)"]
+
+    if (shap_df.iloc[num_var, 0] not in liste_point):
         plt.scatter(rang, var_client, color="black", label=f"Client n°{identifiant}")
     else:
-        plt.vlines(x=rang, ymin=0, ymax=shap_df.iloc[num_var,-1], color="black", label=f"Client n°{identifiant}")
+        plt.vlines(x=rang, ymin=0, ymax=shap_df.iloc[num_var,-2], color="black", label=f"Client n°{identifiant}")
     
     plt.xlabel("Groupe de clients", fontsize = 7)
-    plt.ylabel(f"{shap_df.iloc[num_var,-2]}", fontsize = 7, labelpad=10)
+    plt.ylabel(f"{shap_df.iloc[num_var,-3]}", fontsize = 7, labelpad=10)
     
     plt.xticks(np.arange(0, len_x+2, 5))
     
     plt.xlim(-1, len_x+1)
-    plt.ylim(0, (shap_df.iloc[num_var,-1]))
+    plt.ylim(0, (shap_df.iloc[num_var,-2]))
                    
     plt.legend(frameon=False, loc=1, fontsize=7)
     
-    plt.title(f"{shap_df.iloc[num_var,-3]}""\npar groupes de clients", fontsize=10)
+    plt.title(f"{shap_df.iloc[num_var,-4]}""\npar groupes de clients", fontsize=10)
 
 
-# In[18]:
+# In[10]:
 
 
 def graph_shap(shap_df, identifiant):
-    shap_df["Shap"] = shap_df["Shap"]*100/shap_df["Shap"].sum(axis=0)
+#     shap_df = shap_df.sort_values("abs_shap", ascending=True)
+    shap_df["Shap"] = shap_df["Shap"]*100/shap_df["abs_shap"].sum(axis=0)
+    sha_pos = shap_df.loc[shap_df["Shap"]>0,:]
+    sha_neg = shap_df.loc[shap_df["Shap"]<0,:]
+    sha_pos["pos"] = sha_pos.index
+    sha_neg["pos"] = sha_neg.index
+     
+    plt.barh(width = sha_neg["Shap"], y = sha_neg["pos"], color="blue")
+    plt.barh(width = sha_pos["Shap"], y = sha_pos["pos"], color="red")
     
-    plt.barh(width = shap_df["Shap"], y = shap_df["Label"], color="black")
+#         elif (shap_df.iloc[i]["Shap"]>0):
+#             plt.barh(width = shap_df.iloc[i]["Shap"], y = shap_df.iloc[i]["Label"], color="red")
     
     plt.xlabel("Pourcentage d'impact sur la décision", labelpad = 10, fontsize=11)
     plt.ylabel("Critères", labelpad = 10, fontsize=11)
@@ -320,7 +360,7 @@ def graph_shap(shap_df, identifiant):
     plt.title("Classement du poids des critères\n"f"pour le client n°{identifiant}", fontsize=14, pad=20)
 
 
-# In[19]:
+# In[11]:
 
 
 def graph_distribution(df, client_proba, seuil):
@@ -342,7 +382,7 @@ def graph_distribution(df, client_proba, seuil):
               fontsize = 14, pad=20)
 
 
-# In[20]:
+# In[12]:
 
 
 def plot_shap(données, identifiant, col_fit):
@@ -385,86 +425,15 @@ def plot_shap(données, identifiant, col_fit):
     
     shap_df = pd.DataFrame(list(zip(colonne, shap_val, col_val, colonne_graph, colonne_label, col_max)), 
                                columns = ["Variables", "Shap", "Valeur", 
-                                          "Variable_g", "Label", "Max_g"]).sort_values("Shap").reset_index(drop=True)
+                                          "Variable_g", "Label", "Max_g"])
+    shap_df["abs_shap"] = np.abs(shap_df["Shap"])
+    
+    shap_df = shap_df.sort_values("abs_shap").reset_index(drop=True)
     
     return shap_df
 
 
-# In[21]:
-
-
-def plot_dist_shap(identifiant, données, score, seuil):
-    
-    client_proba = proba_faillite(identifiant, données, score, seuil)
-    
-    rang = données.loc[données["SK_ID_CURR"]==identifiant, "Rang"].item()
-    
-    col_fit = données.iloc[:,2:].columns.tolist()
-    
-    shap_df = plot_shap(données, identifiant, col_fit)
-    
-    plt.figure(figsize=(15,4))
-    
-    plt.subplot(121)
-    
-    graph_distribution(données, client_proba, seuil)
-    
-    plt.subplot(122)
-    
-    graph_shap(shap_df, identifiant)
-    
-    plt.subplots_adjust(left=0.1,
-                        bottom=0.1, 
-                        right=0.9, 
-                        top=0.9, 
-                        wspace=0.55, 
-                        hspace=0.5)
-    
-    st.pyplot(plt.gcf())
-#     plt.show()
-    
-    return shap_df, rang
-
-
-# In[29]:
-
-
-def plot_client_shap(identifiant, données, score, seuil, critère):    
-    
-    plt.figure(figsize=(11,4.2))
-    if (len(critère)==0):
-        plt.subplot(121)
-        
-        graph_variable(identifiant, shap_df, données, -1, seuil)
-        
-        plt.subplot(122)
-        
-        graph_variable(identifiant, shap_df, données, -2, seuil)
-    
-    elif (len(critère)==2):
-        plt.subplot(121)
-        ind_1 = (shap_df.index[shap_df["Variables"]==critère[0]].values).item() 
-        graph_variable(identifiant, shap_df, données, ind_1, seuil)
-        
-        plt.subplot(122)
-        ind_2 = (shap_df.index[shap_df["Variables"]==critère[1]].values).item() 
-        graph_variable(identifiant, shap_df, données, ind_2, seuil)    
-    
-    plt.subplots_adjust(left=0.1,
-                        bottom=0.1, 
-                        right=0.9, 
-                        top=0.9, 
-                        wspace=0.55, 
-                        hspace=0.5)
-    
-
-#     plt.savefig("Outputs/données_client.jpg")
-    
-    fig_html = mpld3.fig_to_html(plt.gcf())
-    components.html(fig_html, height = 500, scrolling=True)
-
-
-# In[30]:
+# In[13]:
 
 
 def gauge(identifiant, client_proba):
@@ -525,6 +494,147 @@ def gauge(identifiant, client_proba):
 #     plt.show()
 
 
+# In[14]:
+
+
+# rank_feature_shapley = pd.read_csv("Outputs/rank_feature_shapley_p7.csv", low_memory=False, index_col=0)
+
+# sum_shap = rank_feature_shapley["Shap_Importance"].sum(axis=0)
+
+# colonne_label = ["Pourcentage\nclient vehiculé", "Pourcentage\n propriétaire", 
+#                      "Pourcentage\nbusinessman(woman)", 
+#                      "Pourcentage\nclient marié(e)", "Population relative\nrégion", 
+#                      "Ancien prêt\nannulé/vendu", "Ancien prêt\nrenouvelable", 
+#                      "Pourcentage\nprêt avec retard"]
+
+# rank_feature_shapley["lab"] = colonne_label
+
+# rank_feature_shapley
+
+
+# In[15]:
+
+
+def plot_shap_global():
+    rank_feature_shapley = pd.read_csv("Outputs/rank_feature_shapley_p7.csv", low_memory=False, index_col=0)
+    sum_shap = rank_feature_shapley["Shap_Importance"].sum(axis=0)
+    colonne_label = ["Pourcentage\nclient vehiculé", "Pourcentage\n propriétaire", 
+                     "Pourcentage\nbusinessman(woman)", 
+                     "Pourcentage\nclient marié(e)", "Population relative\nrégion", 
+                     "Ancien prêt\nannulé/vendu", "Ancien prêt\nrenouvelable", 
+                     "Pourcentage\nprêt avec retard"]
+
+    rank_feature_shapley["Label"] = colonne_label
+
+    rank_feature_shapley["Shap_Importance_perc"] = rank_feature_shapley["Shap_Importance"]*100/sum_shap
+    
+    rank_feature_shapley.sort_values(by=['Shap_Importance_perc'], ascending=True, inplace=True)
+    
+#     plt.figure(figsize=(6,4))
+    
+    plt.barh(width = rank_feature_shapley["Shap_Importance_perc"], y = rank_feature_shapley["Label"], color="firebrick")
+    
+    plt.xlabel("Importance (%)", fontsize = 12)
+    plt.ylabel("Variables", fontsize = 12)
+    
+    plt.xticks(fontsize = 10)
+    plt.yticks(fontsize = 10)
+    
+    plt.title("Classement du poids des critères\n"f"pour l'ensemble des clients", fontsize=14, pad=20)
+    
+#     plt.show()
+
+
+# In[16]:
+
+
+def plot_dist_shap(identifiant, données, score, seuil):
+    
+    client_proba = proba_faillite(identifiant, données, score, seuil)
+    
+    rang = données.loc[données["SK_ID_CURR"]==identifiant, "Rang"].item()
+    
+    col_fit = données.iloc[:,2:].columns.tolist()
+    
+    shap_df = plot_shap(données, identifiant, col_fit)
+    
+    plt.figure(figsize=(15,10))    
+   
+    plt.subplot(221)
+    
+    graph_distribution(données, client_proba, seuil)
+    
+    plt.subplot(222)
+    
+    plot_shap_global()
+    
+    plt.subplot(223)
+    
+    graph_shap(shap_df, identifiant)
+    
+    plt.subplots_adjust(left=0.1,
+                        bottom=0.1, 
+                        right=0.9, 
+                        top=0.9, 
+                        wspace=0.55, 
+                        hspace=0.5)
+    
+    st.pyplot(plt.gcf())
+#     plt.show()
+    
+    return shap_df, rang
+
+
+# In[123]:
+
+
+# sha_pos = sha.loc[sha["Shap"]>0,:]
+# sha_neg = sha.loc[sha["Shap"]<0,:]
+# sha_pos["pos"] = sha_pos.index
+# sha_neg["pos"] = sha_neg.index
+# sha_neg
+
+
+# In[14]:
+
+
+def plot_client_shap(identifiant, données, score, seuil, critère):    
+    
+    plt.figure(figsize=(11,4.2))
+    if (len(critère)==0):
+        plt.subplot(121)
+        
+        graph_variable(identifiant, shap_df, données, -1, seuil)
+        
+        plt.subplot(122)
+        
+        graph_variable(identifiant, shap_df, données, -2, seuil)
+    
+    elif (len(critère)==2):
+        plt.subplot(121)
+        ind_1 = (shap_df.index[shap_df["Variables"]==critère[0]].values).item() 
+        print(ind_1)
+        graph_variable(identifiant, shap_df, données, ind_1, seuil)
+        
+        plt.subplot(122)
+        ind_2 = (shap_df.index[shap_df["Variables"]==critère[1]].values).item()
+        print(ind_2)
+        graph_variable(identifiant, shap_df, données, ind_2, seuil)    
+    
+    plt.subplots_adjust(left=0.1,
+                        bottom=0.1, 
+                        right=0.9, 
+                        top=0.9, 
+                        wspace=0.55, 
+                        hspace=0.5)
+#     plt.show()
+
+#     plt.savefig("Outputs/données_client.jpg")
+    
+    fig_html = mpld3.fig_to_html(plt.gcf())
+    components.html(fig_html, height = 500, scrolling=True)
+
+
 # In[147]:
 
 
@@ -559,6 +669,9 @@ with placeholder.container():
         id_client = (client_choisi)
 
     if id_client:
+#         st.write(f'Le résultat obtenu a une précision de {round(100*score,1)} %.')
+#         shap_df, rang = plot_dist_shap(id_client, df, score, seuil)
+
         with col1:
             client_proba = proba_faillite(id_client, df, score, seuil)
             gauge(id_client, client_proba)
@@ -567,6 +680,7 @@ with placeholder.container():
             Le seuil obtenu a été déterminé de façon à limiter le nombre de crédit donné à des clients 
             n'allant pas au bout de leur prêt.
             '''
+            plot_shap_global()
         with col2:  
             shap_df, rang = plot_dist_shap(id_client, df, score, seuil)
         
