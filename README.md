@@ -1,4 +1,4 @@
-# P7_scoring_credit
+# Implémentation d'un modèle de scoring
 
 Dans le cadre de notre étude sur l’implémentation d’un modèle de scoring, nous avons pour but de déterminer pour chaque client la probabilité de faillite de remboursement d’un crédit. Nous présentons dans cette étude la manière dont cette probabilité a été déterminée pour chaque client. Pour cela, nous nous sommes basés sur une liste de clients dont nous savons si ce sont de bons clients (faible probabilité de remboursement d’un crédit) ou de mauvais clients (forte probabilité de remboursement d’un crédit)ainsi que diverses informations (professionnelles, personnelles, familiales…).
 
